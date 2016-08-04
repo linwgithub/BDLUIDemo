@@ -23,6 +23,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import linw.bdlulib.BDSpeakHelper;
+
 public class MainActivity extends AppCompatActivity implements RecognitionListener {
 
     public static final int STATUS_None = 0;
@@ -39,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
     private static final int EVENT_ERROR = 11;
 
     private Button btn;
+    private BDSpeakHelper bdSpeakHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         //init speechRecognizer
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this, new ComponentName(this, VoiceRecognitionService.class));
         speechRecognizer.setRecognitionListener(this);
+        bdSpeakHelper = new BDSpeakHelper(this);
     }
 
     private static final int REQUEST_UI = 1;
@@ -160,11 +164,7 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
                 intent.putExtra(Constant.EXTRA_LANGUAGE, tmp);
             }
         }
-//        if (sp.contains(Constant.EXTRA_NLU)) {
-//            String tmp = sp.getString(Constant.EXTRA_NLU, "").replaceAll(",.*", "").trim();
-//            if (null != tmp && !"".equals(tmp)) {
-//            }
-//        }
+        //是否开启智能理解
         intent.putExtra(Constant.EXTRA_NLU, "enable");
 
         if (sp.contains(Constant.EXTRA_VAD)) {
@@ -303,63 +303,56 @@ public class MainActivity extends AppCompatActivity implements RecognitionListen
         try {
             print("origin_result=\n" + new JSONObject(json_res).toString(4));
             Log.e(TAG, new JSONObject(json_res).toString(4));
-            /**
-            {
-    "content":
-         {
-             "item": ["开始运动"],
-             "json_res":
-                "{"parsed_text":"开始 运动 ",
-                "raw_text":"开始运动",
-                "results":[
-                    {"domain":"custom_instruction",
-                    "intent":"query",
-                    "object":
-                        {"id":"1",
-                        "instance":"开始运动"},
-                    "score":0.80}]}"},
-     "result":
-         {
-            "corpus_no": 6314510790415159140,
-            "err_no": 0,
-            "idx": -13,
-            "res_type": 3,
-            "sn": "60f76346-8624-4d40-b24f-3c019f7e7cc1"
-        }
-            }
-             */
-            JSONObject content = new JSONObject(json_res);
-            Log.e(TAG, content.toString());
+            JSONObject resultOBJ = new JSONObject(json_res);
+            JSONObject content = resultOBJ.getJSONObject("content");
             if (content != null) {
                 Log.e(TAG, content.toString());
-                JSONArray item = content.getJSONArray("item");
-                Log.e(TAG, item.toString());
-                Object json_resStr = content.get("json_res");
-                if (json_resStr != null) {
-                    Log.e(TAG, "jsong_res != null & :" + json_resStr.toString());
+            } else {
+                Log.e(TAG, "item is null ()");
+            }
+            String json_resStr = content.getString("json_res");
+            if (json_resStr != null) {
+                Log.e(TAG, "jsong_res != null & :" + json_resStr.toString());
+            } else {
+                Log.e(TAG, "jsong_res == null");
+            }
+                if (TextUtils.isEmpty(json_resStr)) {
+                    Log.e(TAG, "json_res is null");
                 } else {
-                    Log.e(TAG, "jsong_res == null");
-                }
-//                if (TextUtils.isEmpty(json_resStr)) {
-//                    Log.e(TAG, "json_res is null");
-//                } else {
-//                    Log.e(TAG, "json_res is not null");
-//                    Log.e(TAG, json_resStr.toString());
-//                    JSONObject json_resOBJ = new JSONObject(json_resStr);
-//                    String parsed_text = json_resOBJ.getString("parsed_text");
-//                    String raw_test = json_resOBJ.getString("raw_test");
-//                    JSONObject resultsObj = json_resOBJ.getJSONObject("results");
-//                    if (resultsObj != null) {
-//                        String domain = resultsObj.getString("domain");
-//                        String intent = resultsObj.getString("intent");
-//                        JSONObject commindObject = resultsObj.getJSONObject("object");
-//                        int commind_id = commindObject.getInt("id");
+                    Log.e(TAG, "json_res is not null");
+                    JSONObject json_resOBJ = new JSONObject(json_resStr);
+                    String parsed_text = json_resOBJ.getString("parsed_text");
+                    String raw_test = json_resOBJ.getString("raw_text");
+                    JSONArray resultsObj = json_resOBJ.getJSONArray("results");
+                    if (resultsObj != null && resultOBJ.length() > 0) {
+                        String resultsMainStr = resultsObj.getString(0);
+                        JSONObject resultsMainOBJ = new JSONObject(resultsMainStr);
+                        String domain = resultsMainOBJ.getString("domain");
+                        String intent = resultsMainOBJ.getString("intent");
+                        JSONObject commindObject = resultsMainOBJ.getJSONObject("object");
+                        int commind_id = commindObject.getInt("id");
+                        Log.e(TAG, "conmandID:" + commind_id);
 //                        String command_instance = commindObject.getString("instance");
 //                        double command_score = commindObject.getDouble("score");
-//                        Log.e(TAG, resultsObj.toString());
-//                    }
-//                }
-            }
+                        Log.e(TAG, resultsObj.toString());
+                        switch (commind_id) {
+                            case 1:
+                                bdSpeakHelper.speak("正在为您开启运动,请选择运动模式");
+                                break;
+                            case 2:
+                                bdSpeakHelper.speak("正在为您停止运动");
+                                bdSpeakHelper.speak("运动已停止");
+                                break;
+                            case 3:
+                                bdSpeakHelper.speak("请问有什么需要帮助的?");
+                                break;
+                            default:
+                                break;
+                        }
+                    } else {
+                        bdSpeakHelper.speak("我不明白你在说什么");
+                    }
+                }
         } catch (Exception e) {
             Log.e(TAG, "error:" + e.getMessage());
             print("origin_result=[warning: bad json]\n" + json_res);

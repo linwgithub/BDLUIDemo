@@ -25,6 +25,8 @@ android {
 }
 
 dependencies {
+    compile files('libs/com.baidu.tts_2.2.7.20160616_81bcb05_release.jar')
+    compile files('libs/galaxy-v2.0.jar')
     compile files('libs/VoiceRecognition-2.1.20.jar')
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
