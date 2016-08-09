@@ -38,5 +38,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="btnClick"
-        android:text="开始录音" />
+        android:text="语音识别" />
+
+    <Button
+        android:id="@+id/btn_weakup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="btnClick"
+        android:text="语音唤醒" />
 </LinearLayout>

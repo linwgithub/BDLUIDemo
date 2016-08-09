@@ -1,11 +1,11 @@
-package linw.bdlulib;
+package linw.bdlulib.helper;
 
 import android.content.Context;
+import android.media.audiofx.LoudnessEnhancer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.baidu.tts.auth.AuthInfo;
 import com.baidu.tts.client.SpeechError;
@@ -21,8 +21,7 @@ import java.io.InputStream;
 
 /**
  * 作者: linw
- * 时间: 16/8/4
- * 内容:
+ * 内容:文字转语音的工具,需联网
  */
 public class BDSpeakHelper implements SpeechSynthesizerListener {
 
@@ -40,7 +39,12 @@ public class BDSpeakHelper implements SpeechSynthesizerListener {
     private static final String ENGLISH_TEXT_MODEL_NAME = "bd_etts_text_en.dat";
 
     private static final int PRINT = 0;
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "BDSpeakHelper";
+
+    private OnSpeakListener mOnSpeakListener;
+    public interface OnSpeakListener {
+        void onSpeakFinish();
+    }
 
     private Handler mHandler = new Handler() {
 
@@ -67,14 +71,29 @@ public class BDSpeakHelper implements SpeechSynthesizerListener {
         this.mContext = mContext;
     }
 
-    public void init() {
-        initialEnv();
-        initialTts();
+    /**
+     * 设置语音监听器,语音结束时调用
+     * @param onSpeakListener
+     */
+    public void setOnSpeakListener(OnSpeakListener onSpeakListener) {
+        this.mOnSpeakListener = onSpeakListener;
     }
 
+//    private void init() {
+//        initialEnv();
+//        initialTts();
+//    }m
+
+    /**
+     * 输入文本转化语音
+     * @param speakText
+     */
     public void speak(String speakText) {
         if (mSampleDirPath == null) {
-            init();
+            initialEnv();
+        }
+        if (mSpeechSynthesizer == null) {
+            initialTts();
         }
         int result = this.mSpeechSynthesizer.speak(speakText);
         if (result < 0) {
@@ -191,7 +210,7 @@ public class BDSpeakHelper implements SpeechSynthesizerListener {
 
     @Override
     public void onSynthesizeStart(String s) {
-
+        Log.e(TAG, "onSynthesizeStart");
     }
 
     @Override
@@ -216,12 +235,19 @@ public class BDSpeakHelper implements SpeechSynthesizerListener {
 
     @Override
     public void onSpeechFinish(String s) {
+        Log.e(TAG, "onSpeechFinish");
 
+        if (mOnSpeakListener != null) {
+            mOnSpeakListener.onSpeakFinish();
+        } else {
+            Log.e(TAG, "error : mOnSpeakListener == null");
+        }
+//        this.mSpeechSynthesizer.release();
     }
 
     @Override
     public void onError(String s, SpeechError speechError) {
-
+        Log.e(TAG, "onError error=" + "(" + speechError.code + ")" + speechError.description + "--utteranceId=" + s);
     }
 
     private void toPrint(String str) {
@@ -233,9 +259,7 @@ public class BDSpeakHelper implements SpeechSynthesizerListener {
     private void print(Message msg) {
         String message = (String) msg.obj;
         if (message != null) {
-            Log.w(TAG, message);
-            Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
-//            scrollLog(message);
+            Log.e(TAG, message);
         }
     }
 }

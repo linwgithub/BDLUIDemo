@@ -1,11 +1,11 @@
-package linw.bdluidemo;
+package linw.bdlulib;
 
 /**
  * 作者: linw
  * 时间: 16/8/1
- * 内容:
+ * 内容: 设置语音识别的参数
  */
-public class Constant {
+public class RecognizerParams {
     public static final String EXTRA_KEY = "key";
     public static final String EXTRA_SECRET = "secret";
     public static final String EXTRA_SAMPLE = "sample";
